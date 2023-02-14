@@ -1,0 +1,125 @@
+
+------------------------------- SECTION C: CREATE TABLES -------------------------------
+DROP TABLE IF EXISTS detailed_report;
+-- Creates the detailed report table --
+CREATE TABLE detailed_report ( 
+	staff_id integer, -- staff
+	first_name varchar(50), -- staff
+	last_name varchar(50), -- staff
+	rental_id integer, -- payment
+	payment_id integer, -- payment
+	amount numeric(5,2), -- payment
+	payment_date timestamp without time zone -- payment
+);
+
+SELECT * FROM detailed_report; -- Veiw the empty detailed table 
+
+DROP TABLE IF EXISTS summary_report;
+-- Creates the summary report table --
+CREATE TABLE summary_report(
+	staff_name varchar(100),
+	payment_total numeric(10,2),
+	rental_count integer
+);
+
+SELECT * FROM summary_report; -- Veiw the empty summary table 
+ 
+------------------------------- SECTION D: INSERT DATA INTO TABLES -------------------------------
+-- Insert data into detailed report --
+INSERT INTO detailed_report(
+	staff_id, -- staff
+	first_name, -- staff
+	last_name, -- staff
+	rental_id, -- payment
+	payment_id, -- payment
+	amount, -- payment
+	payment_date -- payment
+)
+SELECT 
+	s.staff_id, s.first_name, s.last_name,
+	p.rental_id, p.payment_id, p.amount, p.payment_date
+FROM payment AS p 
+INNER JOIN staff AS s ON s.staff_id = p.staff_id
+ORDER BY staff_id;
+
+SELECT * FROM detailed_report; -- Veiw filled detailed table
+
+-- Insert data into summary report (SECTION B: contains the transformation of data from A4) --
+INSERT INTO summary_report (
+	SELECT 
+		concat_ws (', ', last_name, first_name) AS staff_name,
+		sum(amount) AS payment_total, COUNT(rental_id) AS rental_count
+	FROM detailed_report
+	GROUP BY staff_name
+);
+
+SELECT * FROM summary_report; -- Veiw filled summary table
+
+
+------------------------------- SECTION E: CREATE FUNCTION FOR TRIGGER -------------------------------
+-- Refreshes the summary report with data from detailed report --
+CREATE FUNCTION refresh_summary_report()
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+AS $$ 
+BEGIN
+
+DELETE FROM summary_report; -- empties the summary report
+INSERT INTO summary_report (
+	SELECT 
+		concat_ws (', ', last_name, first_name) AS staff_name,
+		sum(amount) AS payment_total, COUNT(rental_id) AS rental_count
+	FROM detailed_report
+	GROUP BY staff_name
+);
+
+RETURN NEW;
+END; $$
+
+------------------------------- SECTION E: CREATE TRIGGER -------------------------------
+CREATE TRIGGER refresh_summary_table
+AFTER INSERT ON detailed_report
+FOR EACH STATEMENT
+EXECUTE PROCEDURE refresh_summary_report();
+
+------------------------------- SECTION F: CREATE PROCEDURE -------------------------------
+CREATE PROCEDURE table_refresh()
+LANGUAGE plpgsql
+AS $$ 
+BEGIN
+
+DELETE FROM detailed_report; -- Empties the detailed report
+-- Reinsert new data to detailed report -- 
+INSERT INTO detailed_report(
+	staff_id, -- staff
+	first_name, -- staff
+	last_name, -- staff
+	rental_id, -- payment
+	payment_id, -- payment
+	amount, -- payment
+	payment_date -- payment
+)
+SELECT 
+	s.staff_id, s.first_name, s.last_name,
+	p.rental_id, p.payment_id, p.amount, p.payment_date
+FROM payment AS p 
+INNER JOIN staff AS s ON s.staff_id = p.staff_id
+ORDER BY staff_id;
+
+DELETE FROM summary_report; -- Empties the summary report
+-- Reinsert new data to summary report -- 
+INSERT INTO summary_report (
+	SELECT 
+		concat_ws (', ', last_name, first_name) AS staff_name,
+		sum(amount) AS payment_total, COUNT(rental_id) AS rental_count
+	FROM detailed_report
+	GROUP BY staff_name
+);
+END;$$
+
+
+-- To call stored procedure
+CALL table_refresh();
+
+-- SELECT * FROM detailed_report;
+-- SELECT * FROM summary_report;
