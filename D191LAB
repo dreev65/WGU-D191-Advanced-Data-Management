@@ -41,11 +41,10 @@ ORDER BY staff_id;
 
 SELECT * FROM detailed_report; -- Veiw filled detailed table
 
--- Insert data into summary report (SECTION B: contains the transformation of data from A4) --
+-- Insert data into summary report 
 INSERT INTO summary_report (
 	SELECT 
-		concat_ws (', ', last_name, first_name) AS staff_name,
-		sum(amount) AS payment_total, COUNT(rental_id) AS rental_count
+		staff_name, sum(amount) AS payment_total, COUNT(rental_id) AS rental_count
 	FROM detailed_report
 	GROUP BY staff_name
 );
@@ -64,8 +63,7 @@ BEGIN
 DELETE FROM summary_report; -- empties the summary report
 INSERT INTO summary_report (
 	SELECT 
-		concat_ws (', ', last_name, first_name) AS staff_name,
-		sum(amount) AS payment_total, COUNT(rental_id) AS rental_count
+		staff_name, sum(amount) AS payment_total, COUNT(rental_id) AS rental_count
 	FROM detailed_report
 	GROUP BY staff_name
 );
@@ -80,6 +78,7 @@ FOR EACH STATEMENT
 EXECUTE PROCEDURE refresh_summary_report();
 
 ------------------------------- SECTION F: CREATE PROCEDURE -------------------------------
+DROP PROCEDURE table_refresh();
 CREATE PROCEDURE table_refresh()
 LANGUAGE plpgsql
 AS $$ 
@@ -106,8 +105,7 @@ DELETE FROM summary_report; -- Empties the summary report
 -- Reinsert new data to summary report -- 
 INSERT INTO summary_report (
 	SELECT 
-		concat_ws (', ', last_name, first_name) AS staff_name,
-		sum(amount) AS payment_total, COUNT(rental_id) AS rental_count
+		staff_name, sum(amount) AS payment_total, COUNT(rental_id) AS rental_count
 	FROM detailed_report
 	GROUP BY staff_name
 );
