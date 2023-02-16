@@ -1,11 +1,9 @@
-
 ------------------------------- SECTION C: CREATE TABLES -------------------------------
 DROP TABLE IF EXISTS detailed_report;
 -- Creates the detailed report table --
 CREATE TABLE detailed_report ( 
 	staff_id integer, -- staff
-	first_name varchar(50), -- staff
-	last_name varchar(50), -- staff
+	staff_name varchar(100), -- staff (concat_ws of last_name and first_name)
 	rental_id integer, -- payment
 	payment_id integer, -- payment
 	amount numeric(5,2), -- payment
@@ -28,15 +26,14 @@ SELECT * FROM summary_report; -- Veiw the empty summary table
 -- Insert data into detailed report --
 INSERT INTO detailed_report(
 	staff_id, -- staff
-	first_name, -- staff
-	last_name, -- staff
+	staff_name, -- staff (concat_ws of last_name and first_name)
 	rental_id, -- payment
 	payment_id, -- payment
 	amount, -- payment
 	payment_date -- payment
 )
 SELECT 
-	s.staff_id, s.first_name, s.last_name,
+	s.staff_id, concat_ws (', ', s.last_name, s.first_name) AS staff_name,
 	p.rental_id, p.payment_id, p.amount, p.payment_date
 FROM payment AS p 
 INNER JOIN staff AS s ON s.staff_id = p.staff_id
@@ -92,15 +89,14 @@ DELETE FROM detailed_report; -- Empties the detailed report
 -- Reinsert new data to detailed report -- 
 INSERT INTO detailed_report(
 	staff_id, -- staff
-	first_name, -- staff
-	last_name, -- staff
+	staff_name, -- staff (concat_ws of last_name and first_name)
 	rental_id, -- payment
 	payment_id, -- payment
 	amount, -- payment
 	payment_date -- payment
 )
 SELECT 
-	s.staff_id, s.first_name, s.last_name,
+	s.staff_id, concat_ws (', ', s.last_name, s.first_name) AS staff_name,
 	p.rental_id, p.payment_id, p.amount, p.payment_date
 FROM payment AS p 
 INNER JOIN staff AS s ON s.staff_id = p.staff_id
